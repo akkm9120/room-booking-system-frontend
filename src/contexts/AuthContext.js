@@ -53,6 +53,15 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
+      
+      // Handle network errors with a more user-friendly message
+      if (error.code === 'ERR_NETWORK') {
+        return { 
+          success: false, 
+          message: 'Cannot connect to server. Please check your internet connection or try again later.'
+        };
+      }
+      
       return { 
         success: false, 
         message: error.response?.data?.message || 'Login failed' 
