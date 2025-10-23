@@ -1,9 +1,11 @@
 {
-  "name": "room-booking-admin-frontend",
+  "name": "room-booking-frontend",
   "version": "1.0.0",
   "description": "Admin frontend for Room Booking System",
   "private": true,
   "dependencies": {
+    "@headlessui/react": "^1.7.15",
+    "@heroicons/react": "^2.2.0",
     "@tanstack/react-query": "^5.90.2",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
@@ -23,7 +25,6 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "build:windows": "set CI=false && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "serve": "serve -s build -l 3000"
@@ -45,5 +46,20 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "main": "index.js",
+  "devDependencies": {
+    "jest": "^27.5.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akkm9120/room-booking-system-frontend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/akkm9120/room-booking-system-frontend/issues"
+  },
+  "homepage": "."
 }
