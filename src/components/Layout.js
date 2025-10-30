@@ -17,11 +17,16 @@ import { MagnifyingGlassIcon as SearchIcon } from '@heroicons/react/24/solid';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 
-const navigation = [
+const adminNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Bookings', href: '/bookings', icon: CalendarIcon },
   { name: 'Rooms', href: '/rooms', icon: FolderIcon },
   { name: 'Users', href: '/users', icon: UsersIcon },
+];
+
+const visitorNavigation = [
+  { name: 'Book a Room', href: '/visitor/rooms', icon: FolderIcon },
+  { name: 'My Bookings', href: '/visitor/bookings', icon: CalendarIcon },
 ];
 
 function classNames(...classes) {
@@ -32,9 +37,12 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const auth = useAuth();
   const user = auth?.user;
+  const role = auth?.role;
   const logout = auth?.logout;
   const location = useLocation();
   const navigate = useNavigate();
+
+  const navigation = role === 'admin' ? adminNavigation : visitorNavigation;
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {

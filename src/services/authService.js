@@ -1,9 +1,10 @@
 import api from './api';
 
 export const authService = {
-  login: async (email, password) => {
+  login: async (email, password, role) => {
     try {
-      const response = await api.post('/admin/login', { email, password });
+      const endpoint = role === 'admin' ? '/admin/login' : '/visitor/login';
+      const response = await api.post(endpoint, { email, password });
       return response.data;
     } catch (error) {
       if (error.code === 'ERR_NETWORK') {
@@ -22,14 +23,28 @@ export const authService = {
 
   verifyToken: async () => {
     try {
-      const response = await api.get('/admin/profile');
-      return response.data.data;
+      // Try to verify admin token first
+      const adminResponse = await api.get('/admin/profile');
+      if (adminResponse.data.data) {
+        return { ...adminResponse.data.data, role: 'admin' };
+      }
     } catch (error) {
-      return null;
+      // If admin verification fails, try to verify visitor token
+      try {
+        const userResponse = await api.get('/visitor/profile');
+        if (userResponse.data.data) {
+          return { ...userResponse.data.data, role: 'visitor' };
+        }
+      } catch (userError) {
+        return null; // Neither token is valid
+      }
     }
+    return null;
   },
 
   logout: () => {
+    // Remove both tokens on logout to be safe
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('visitorToken');
   },
 };

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, Shield, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,15 +20,16 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      const result = await login(data.email, data.password);
+      // Always use 'admin' role for this login page
+      const result = await login(data.email, data.password, 'admin');
       if (result.success) {
-        toast.success('Login successful!');
+        toast.success('Admin login successful!');
         navigate('/dashboard');
       } else {
-        toast.error(result.message || 'Login failed');
+        toast.error(result.message || 'Invalid admin credentials');
       }
     } catch (error) {
-      toast.error('An error occurred during login');
+      toast.error(error.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);
     }
@@ -39,13 +40,13 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center">
-            <Lock className="h-8 w-8 text-white" />
+            <Shield className="h-8 w-8 text-white" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
             Admin Login
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Room Booking System Administration
+            Room Booking System Management
           </p>
         </div>
         
@@ -53,7 +54,7 @@ const Login = () => {
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label htmlFor="email" className="form-label">
-                Email Address
+                Admin Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -130,7 +131,7 @@ const Login = () => {
                     Signing in...
                   </div>
                 ) : (
-                  'Sign in'
+                  'Sign in as Admin'
                 )}
               </button>
             </div>
@@ -138,10 +139,20 @@ const Login = () => {
 
           <div className="mt-6 text-center">
             <div className="text-sm text-gray-600">
-              <p className="font-medium">Default Credentials:</p>
+              <p className="font-medium">Default Admin Credentials:</p>
               <p>Email: admin@uow.edu.au</p>
               <p>Password: admin123</p>
             </div>
+          </div>
+          
+          <div className="mt-6 pt-5 border-t border-gray-200">
+            <Link 
+              to="/visitor/login" 
+              className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-primary-600 bg-white border border-primary-300 rounded-md hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+            >
+              <span>Go to Visitor Login</span>
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </div>
         </div>
       </div>
