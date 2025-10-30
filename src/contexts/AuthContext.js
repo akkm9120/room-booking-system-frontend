@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 
 const AuthContext = createContext();
@@ -15,39 +15,52 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [role, setRole] = useState(null);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const token = localStorage.getItem('adminToken');
-        if (token) {
-          // Verify token is still valid
-          const userData = await authService.verifyToken();
-          if (userData) {
-            setUser(userData);
-            setIsAuthenticated(true);
-          } else {
-            localStorage.removeItem('adminToken');
-          }
+  const initializeAuth = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('visitorToken');
+      if (token) {
+        // Verify token is still valid
+        const userData = await authService.verifyToken();
+        if (userData) {
+          const name = `${userData.first_name || ''} ${userData.last_name || ''}`.trim();
+          setUser({ ...userData, name });
+          setRole(userData.role);
+          setIsAuthenticated(true);
+        } else {
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('visitorToken');
         }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        localStorage.removeItem('adminToken');
-      } finally {
-        setLoading(false);
       }
-    };
-
-    initializeAuth();
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('visitorToken');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const login = async (email, password) => {
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  const login = async (email, password, role) => {
     try {
-      const response = await authService.login(email, password);
-      const { admin, token } = response.data;
+      const response = await authService.login(email, password, role);
+      const { token } = response.data;
+      const userData = response.data.visitor || response.data.admin;
+
+      if (role === 'admin') {
+        localStorage.setItem('adminToken', token);
+      } else {
+        localStorage.setItem('visitorToken', token);
+      }
       
-      localStorage.setItem('adminToken', token);
-      setUser(admin);
+      const name = `${userData.first_name || ''} ${userData.last_name || ''}`.trim();
+      setUser({ ...userData, name });
+      setRole(role);
       setIsAuthenticated(true);
       
       return { success: true };
@@ -70,8 +83,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('adminToken');
+    authService.logout();
     setUser(null);
+    setRole(null);
     setIsAuthenticated(false);
   };
 
@@ -79,6 +93,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
+    role,
     login,
     logout,
   };
