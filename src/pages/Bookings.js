@@ -177,12 +177,13 @@ const Bookings = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: { color: 'bg-yellow-100 text-yellow-800 border border-yellow-200', icon: Clock },
-      confirmed: { color: 'bg-green-100 text-green-800 border border-green-200', icon: CheckCircle },
+      pending_approval: { color: 'bg-yellow-100 text-yellow-800 border border-yellow-200', icon: Clock },
+      approved: { color: 'bg-green-100 text-green-800 border border-green-200', icon: CheckCircle },
       rejected: { color: 'bg-red-100 text-red-800 border border-red-200', icon: XCircle },
+      cancelled: { color: 'bg-gray-100 text-gray-800 border border-gray-200', icon: X }
     };
 
-    const config = statusConfig[status] || statusConfig.pending;
+    const config = statusConfig[status] || statusConfig.pending_approval;
     const Icon = config.icon;
 
     return (
@@ -272,9 +273,10 @@ const Bookings = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
+              <option value="pending_approval">Pending Approval</option>
+              <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
         </div>
@@ -351,7 +353,7 @@ const Bookings = () => {
                       <div className="flex space-x-2">
                         {isAdmin && (
                           <>
-                            {booking.status === 'pending' && (
+                            {booking.status === 'pending_approval' && (
                               <>
                                 <button
                                   onClick={() => handleApprove(booking.id)}

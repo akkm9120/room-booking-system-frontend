@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Bookings from './pages/Bookings';
 import Rooms from './pages/Rooms';
 import Users from './pages/Users';
+import Admins from './pages/Admins';
 // Visitor Components
 import { VisitorAuthProvider } from './contexts/VisitorAuthContext';
 import VisitorLogin from './pages/VisitorLogin';
@@ -85,6 +86,13 @@ function App() {
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Layout>
                     <Users />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/admins" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Layout>
+                    <Admins />
                   </Layout>
                 </ProtectedRoute>
               } />

@@ -3,9 +3,9 @@ import { visitorBookingsApi } from '../services/visitorApi';
 import toast from 'react-hot-toast';
 import { 
   Calendar, Clock, MapPin, Users, DollarSign, 
-  CheckCircle, XCircle, AlertCircle, X, Trash2, History 
+  CheckCircle, XCircle, AlertCircle, X, Trash2, History, Edit, Save, Loader 
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const VisitorBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -13,7 +13,14 @@ const VisitorBookings = () => {
   const [activeTab, setActiveTab] = useState('active'); // active or history
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    purpose: '',
+    description: '',
+    expected_attendees: 1
+  });
 
   useEffect(() => {
     fetchBookings();
@@ -50,19 +57,60 @@ const VisitorBookings = () => {
     }
   };
 
+  const handleEditBooking = async () => {
+    if (!selectedBooking) return;
+
+    setEditLoading(true);
+    try {
+      // Include the original booking date/time fields along with the updated form data
+      const updateData = {
+        ...editFormData,
+        booking_date: format(parseISO(selectedBooking.booking_date), 'yyyy-MM-dd'), // Format to YYYY-MM-DD
+        start_time: format(parseISO(selectedBooking.start_time), 'yyyy-MM-dd HH:mm:ss'),    // Format to YYYY-MM-DD HH:MM:SS
+        end_time: format(parseISO(selectedBooking.end_time), 'yyyy-MM-dd HH:mm:ss'),         // Format to YYYY-MM-DD HH:MM:SS
+        room_id: selectedBooking.room_id // Include room_id for validation
+      };
+      
+      await visitorBookingsApi.updateBooking(selectedBooking.id, updateData);
+      toast.success('Booking updated successfully');
+      setShowEditModal(false);
+      setSelectedBooking(null);
+      setEditFormData({
+        purpose: '',
+        description: '',
+        expected_attendees: 1
+      });
+      fetchBookings();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update booking');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const openEditModal = (booking) => {
+    setSelectedBooking(booking);
+    setEditFormData({
+      purpose: booking.purpose || '',
+      description: booking.description || '',
+      expected_attendees: booking.expected_attendees || 1
+    });
+    setShowEditModal(true);
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: {
+      pending_approval: {
         bg: 'bg-yellow-100',
         text: 'text-yellow-800',
         icon: AlertCircle,
-        label: 'Pending',
+        label: 'Pending Approval',
       },
-      confirmed: {
+      approved: {
         bg: 'bg-green-100',
         text: 'text-green-800',
         icon: CheckCircle,
-        label: 'Confirmed',
+        label: 'Approved',
       },
       cancelled: {
         bg: 'bg-red-100',
@@ -84,7 +132,7 @@ const VisitorBookings = () => {
       },
     };
 
-    const config = statusConfig[status] || statusConfig.pending;
+    const config = statusConfig[status] || statusConfig.pending_approval;
     const Icon = config.icon;
 
     return (
@@ -239,8 +287,17 @@ const VisitorBookings = () => {
                 </div>
 
                 {/* Actions */}
-                {activeTab === 'active' && booking.status !== 'cancelled' && booking.status !== 'rejected' && (
+                {activeTab === 'active' && booking.status !== 'cancelled' && booking.status !== 'rejected' && booking.status !== 'completed' && (
                   <div className="mt-4 lg:mt-0 lg:ml-6 flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-2">
+                    {booking.status === 'approved' && (
+                      <button
+                        onClick={() => openEditModal(booking)}
+                        className="flex-1 lg:flex-none px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium hover:bg-blue-100 transition-colors text-sm flex items-center justify-center"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setSelectedBooking(booking);
@@ -322,6 +379,108 @@ const VisitorBookings = () => {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {cancelLoading ? 'Cancelling...' : 'Yes, Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Booking Modal */}
+      {showEditModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Edit Booking</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2 mb-4">
+                <p className="text-sm">
+                  <span className="font-medium">Room:</span> {selectedBooking.room?.room_name}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Date:</span> {formatDate(selectedBooking.booking_date)}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Time:</span> {formatTime(selectedBooking.start_time)} - {formatTime(selectedBooking.end_time)}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Reference:</span> {selectedBooking.booking_reference}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Purpose *
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.purpose}
+                    onChange={(e) => setEditFormData({...editFormData, purpose: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Meeting purpose"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Additional details about your booking"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Expected Attendees
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editFormData.expected_attendees}
+                    onChange={(e) => setEditFormData({...editFormData, expected_attendees: parseInt(e.target.value) || 1})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditBooking}
+                disabled={editLoading || !editFormData.purpose.trim()}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {editLoading ? (
+                  <>
+                    <Loader className="w-4 h-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Update Booking
+                  </>
+                )}
               </button>
             </div>
           </div>

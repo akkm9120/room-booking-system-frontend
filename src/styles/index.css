@@ -10,14 +10,6 @@ html {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-.bg-primary-50 { background-color: var(--primary-50); }
-.bg-primary-100 { background-color: var(--primary-100); }
-.bg-primary-600 { background-color: var(--primary-600); }
-.bg-primary-700 { background-color: var(--primary-700); }
-.text-primary-700 { color: var(--primary-700); }
-.border-primary-700 { border-color: var(--primary-700); }
-.ring-primary-500 { --tw-ring-color: var(--primary-500); }
-
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
